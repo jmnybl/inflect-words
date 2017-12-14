@@ -41,6 +41,28 @@ def get_src_words(src_indices, index2str):
     raw_words = (index2str[i] for i in src_indices)
     words = takewhile(lambda w: w != onmt.IO.PAD_WORD, raw_words)
     return " ".join(words)
+    
+def read_word_statistics(fname, min_freq=25):
+    words={}
+    for line in open(fname, "rt", encoding="utf-8"):
+        line=line.strip()
+        count,word=line.split()
+        if int(count)<min_freq:
+            return words
+        words[word]=int(count)
+    return words
+    
+def score_beam(predictions, scores, word_statistics):
+    rescored=[]
+    for p,sc in zip(predictions, scores):
+        count=word_statistics.get(p,0)
+        rescored.append((p,sc,count))
+#    if [p for p,s in rescored+tmp][0] != predictions[0]:
+#        print(src_words,"---",predictions[0],"---",[p for p,s in rescored+tmp][0])
+#    print(predictions)
+#    print([p for p,s in rescored+tmp])
+#    print()
+    return [p for p,s,c in sorted(rescored,key=lambda x:x[2], reverse=True)], [s for p,s,c in sorted(rescored,key=lambda x:x[2], reverse=True)], [c for p,s,c in sorted(rescored,key=lambda x:x[2], reverse=True)]
 
 
 def main():
@@ -69,6 +91,8 @@ def main():
             attn_file=open(opt.save_attention,"wt")
     data = onmt.IO.ONMTDataset(opt.src, opt.tgt, translator.fields, None)
 
+    word_statistics=read_word_statistics("/home/jmnybl/finnish_vocab")
+
     test_data = onmt.IO.OrderedIterator(
         dataset=data, device=opt.gpu,
         batch_size=opt.batch_size, train=False, sort=False,
@@ -95,7 +119,10 @@ def main():
                 (sent.squeeze(1) for sent in src.split(1, dim=1)))
 
         for pred_sents, gold_sent, pred_score, gold_score, attention, src_sent in z_batch:
-            n_best_preds = ["".join(pred) for pred in pred_sents[:opt.n_best]]
+            n_best_preds = ["".join(pred)+"\t"+str(score) for pred,score in zip(pred_sents[:opt.n_best],pred_score[:opt.n_best])]
+            
+            #n_best_preds, scores, counts = score_beam(n_best_preds, pred_score[:opt.n_best], word_statistics)
+            
             out_file.write('\n'.join(n_best_preds))
             out_file.write('\n')
             out_file.flush()

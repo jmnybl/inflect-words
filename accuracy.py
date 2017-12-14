@@ -3,7 +3,7 @@ from itertools import zip_longest
 
 
 
-tags="NOUN,PROPN".split(",")
+tags="NOUN,PROPN,Case=Nom,Case=Gen,Case=Par,Case=Tra,Case=Ess,Case=Ine,Case=Ela,Case=Ill,Case=Ade,Case=Abl,Case=All,Number=Sing,Number=Plur".split(",")
 def accuracy(args):
 
     correct=0

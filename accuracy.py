@@ -14,7 +14,7 @@ def accuracy(args):
     else:
         original=[]
     for (g,s),inp in zip_longest(zip(open(args.gold,"rt",encoding="utf-8"),open(args.system,"rt",encoding="utf-8")),original):
-        if g.strip()==s.strip():
+        if g.strip().split("\t")[0]==s.strip().split("\t")[0]:
             correct+=1    
         total+=1
         
@@ -28,7 +28,7 @@ def accuracy(args):
                 labels[tag]=0
                 labels[tag+"_total"]=0
             labels[tag+"_total"]+=1
-            if g.strip()==s.strip():
+            if g.strip().split("\t")[0]==s.strip().split("\t")[0]:
                 labels[tag]+=1
 
     print("\n"+"*"*50+"\n")

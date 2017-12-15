@@ -26,23 +26,23 @@ def inflect_names(args):
         subprocess.call(["python", "predict.py", "-model", args.model2, "-src", "names.to_be_inflected", "-output", "names.inflected.beam2", "-gpu", "0", "-beam_size", str(beam_size), "-n_best", str(beam_size), "-verbose"])
     
     inflections=[]
-    counter=0
-    for option1,option2 in zip(open("names.inflected.beam1","rt",encoding="utf-8"),open("names.inflected.beam2","rt",encoding="utf-8")):
-        if counter==0:
-            inflections.append({})
-        inf,score=option1.strip().split("\t")
-        if inf not in inflections[-1]:
-            inflections[-1][inf]=[float(score)]
-        else:
-            inflections[-1][inf].append(float(score))
-        inf,score=option2.strip().split("\t")
-        if inf not in inflections[-1]:
-            inflections[-1][inf]=[float(score)]
-        else:
-            inflections[-1][inf].append(float(score))
-        counter+=1
-        if counter==10:
-            counter=0
+    files=["names.inflected.beam1"]
+    if args.model2!="":
+        files.append("names.inflected.beam2")
+    
+    for i,inf_file in enumerate(files):
+        counter=0
+        for option1 in open(inf_file,"rt",encoding="utf-8"):
+            if counter==0 and i==0:
+                inflections.append({})
+            inf,score=option1.strip().split("\t")
+            if inf not in inflections[-1]:
+                inflections[-1][inf]=[float(score)]
+            else:
+                inflections[-1][inf].append(float(score))
+            counter+=1
+            if counter==10:
+                counter=0
     f=open(args.outfile,"w")
     for inflected,(name,tag) in zip(inflections,words):
         inf=sorted(inflected.items(),key=lambda x:sum(x[1])/2 if len(x[1])>1 else sum(x[1])*2,reverse=True)[0][0]
@@ -62,7 +62,7 @@ if __name__=="__main__":
     
     g.add_argument('-f', '--file', type=str, help='json file name')
     g.add_argument('-m', '--model1', type=str, help='model name')
-    g.add_argument('--model2', type=str, help='model name')
+    g.add_argument('--model2', type=str, default="", help='model name')
     g.add_argument('-o', '--outfile', type=str, help='output file name')
     
     args = parser.parse_args()
